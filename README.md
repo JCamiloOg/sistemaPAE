@@ -3,13 +3,16 @@
 Explicación paso a paso de ejecución
 
 ## Instalación
+
 Instalar Node js en una versión mayor a 20 (LTS recomendable)
 
 Después de tener Node js en tu pc entrar a la carpeta del proyecto y ejecutar los siguientes comandos:
+
 ```bash
 cd server
 npm install
 ```
+
 se instalarán las dependencias requeridas para la ejecución
 
 ## Varaibles de entorno
@@ -39,6 +42,7 @@ Para correr correctamente el proyecto se usarán variables de entorno, en la ra�
 ## Ejecución en desarrollo
 
 Se ejecutará el siguiente comando y mandará un mensaje del puerto donde se correrá la aplicación
+
 ```bash
 npm run dev
 ```
