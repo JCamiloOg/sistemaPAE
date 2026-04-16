@@ -2,12 +2,12 @@ import conn from "../config/db.js";
 
 
 export async function findAllUsers() {
-    const [rows] = await conn.query("SELECT * FROM usuarios");
+    const [rows] = await conn.query("SELECT U.*, R.rol FROM usuarios U INNER JOIN roles R ON U.role_id = R.id_rol");
     return rows;
 }
 
 export async function findUserByDocument(document) {
-    const [rows] = await conn.query("SELECT * FROM usuarios WHERE documento = ?", [document]);
+    const [rows] = await conn.query("SELECT U.*, R.rol FROM usuarios U INNER JOIN roles R ON U.role_id = R.id_rol WHERE documento = ?", [document]);
     return rows[0];
 }
 
