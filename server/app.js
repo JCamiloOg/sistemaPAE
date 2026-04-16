@@ -3,10 +3,14 @@ import cors from "cors";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import { CORS_ORIGIN } from "./config/env.js";
-import usersRoute from "./routes/users.route.js";
 import { login } from "./controllers/users.controller.js";
-import { verifyTokenAdmin } from "./middlewares/verifyToken.js";
+import { authenticate, authenticateRoles } from "./middlewares/verifyToken.js";
 const app = express();
+
+// Rutas
+import usersRoutes from "./routes/users.routes.js";
+import studentsRoutes from "./routes/students.routes.js";
+import coursesRoutes from "./routes/courses.routes.js";
 
 if (process.env.NODE_ENV === "development") app.use(morgan("dev"));
 
@@ -27,6 +31,8 @@ app.use(cookieParser());
 
 app.post("/api", login);
 
-app.use("/api/users", verifyTokenAdmin, usersRoute);
+app.use("/api/users", authenticate, authenticateRoles("Administrador"), usersRoutes);
+app.use("/api/students", authenticate, authenticateRoles("Administrador"), studentsRoutes);
+app.use("/api/courses", authenticate, authenticateRoles("Administrador"), coursesRoutes);
 
 export default app;
