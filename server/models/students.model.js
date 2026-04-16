@@ -1,12 +1,12 @@
 import conn from "../config/db.js";
 
 export async function findAllStudents() {
-    const [rows] = await conn.query("SELECT * FROM estudiantes");
+    const [rows] = await conn.query("SELECT E.documento, E.nombre, E.apellido, G.grado, G.id_grado, E.create_at, E.estado FROM estudiantes E INNER JOIN grados G ON E.grado = G.id_grado");
     return rows;
 }
 
 export async function findStudentByDocument(document) {
-    const [rows] = await conn.query("SELECT * FROM estudiantes WHERE documento = ?", [document]);
+    const [rows] = await conn.query("SELECT E.documento, E.nombre, E.apellido, G.grado, G.id_grado, E.create_at, E.estado FROM estudiantes E INNER JOIN grados G ON E.grado = G.id_grado WHERE E.documento = ?", [document]);
     return rows[0];
 }
 
