@@ -1,6 +1,6 @@
 import { body } from "express-validator";
 
-export const insertValidate = [
+export const insertUserValidations = [
     body("document")
         .isLength({ min: 6, max: 20 })
         .withMessage("El documento debe tener entre 6 y 20 caracteres.")
@@ -23,7 +23,7 @@ export const insertValidate = [
         .withMessage("El apellido debe tener entre 2 y 50 caracteres."),
 ];
 
-export const updateValidate = [
+export const updateUserValidations = [
     body("password")
         .optional({ checkFalsy: true })
         .isLength({ min: 8, max: 20 })
@@ -40,4 +40,7 @@ export const updateValidate = [
     body("lastName")
         .isLength({ min: 2, max: 50 })
         .withMessage("El apellido debe tener entre 2 y 50 caracteres."),
+    body("status")
+        .isIn([0, 1])
+        .withMessage("El estado es incorrecto."),
 ];
