@@ -2,16 +2,22 @@ import { Router } from "express";
 import { createCourse, deleteCourse, getCourses, updateCourse } from "../controllers/courses.controller.js";
 import { insertCourseValidations, updateCourseValidations } from "../middlewares/validations/courses.validations.js";
 import { validationErrors } from "../middlewares/validations/validationErrors.js";
+import { authenticateRoles } from "../middlewares/verifyToken.js";
 
+// Enrutador de express
 const router = Router();
 
-router.get("/", getCourses);
-router.get("/:id", getCourses);
+// Rutas para obtener grados o grado por id
+router.get("/", authenticateRoles("Administrador", "Encargado PAE"), getCourses);
+router.get("/:id", authenticateRoles("Administrador", "Encargado PAE"), getCourses);
 
-router.post("/", insertCourseValidations, validationErrors, createCourse);
+// Ruta para crear un grado
+router.post("/", authenticateRoles("Administrador"), insertCourseValidations, validationErrors, createCourse);
 
-router.put("/:id", updateCourseValidations, validationErrors, updateCourse);
+// Rutas para actualizar un grado
+router.put("/:id", authenticateRoles("Administrador"), updateCourseValidations, validationErrors, updateCourse);
 
-router.delete("/:id", deleteCourse);
+// Ruta para eliminar un grado
+router.delete("/:id", authenticateRoles("Administrador"), deleteCourse);
 
 export default router;
