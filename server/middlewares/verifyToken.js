@@ -50,6 +50,9 @@ export async function authenticate(req, res, next) {
         // si el token ha expirado
         if (error.name === "TokenExpiredError") return res.status(401).json({ message: "Sesión expirada inicia sesión de nuevo." });
 
+        // si el token se ha roto
+        if (error.name === "JsonWebTokenError") return res.status(401).json({ message: "Sesión rota inicia sesión de nuevo." });
+
         // si el token es invalido
         return res.status(500).json({ message: "Error al verificar el token." });
     }

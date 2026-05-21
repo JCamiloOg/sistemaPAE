@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { insertUserValidations, updateUserValidations } from "../middlewares/validations/user.validations.js";
 import { validationErrors } from "../middlewares/validations/validationErrors.js";
-import { createUser, getUsers, updateUser } from "../controllers/users.controller.js";
+import { createUser, getUsers, updateStatusUser, updateUser } from "../controllers/users.controller.js";
 
 // enrutador de express
 const router = Router();
@@ -17,7 +17,7 @@ router.post("/", insertUserValidations, validationErrors, createUser);
 
 // Rutas para actualizar un usuario
 router.put("/:document", updateUserValidations, validationErrors, updateUser);
-router.put("/status/:document", createUser);
+router.put("/status/:document", updateStatusUser);
 
 // Exportar el enrutador
 export default router;

@@ -1,5 +1,5 @@
-import { findCourseByID } from "../models/courses.model.js";
-import { findAllStudents, findStudentByDocument, insertStudent, modifyStudent } from "../models/students.model.js";
+import { findAllCourses, findCourseByID } from "../models/courses.model.js";
+import { countStudentsByCourse, findStudentByDocument, findStudentsByCourse, insertStudent, modifyStudent } from "../models/students.model.js";
 
 
 export async function getStudents(req, res) {
@@ -19,11 +19,35 @@ export async function getStudents(req, res) {
             return res.status(200).json(student);
         }
 
-        // obtenemos todos los estudiantes
-        const students = await findAllStudents();
+        const course = req.query.course;
 
+        if (course != undefined) {
+
+            let page = parseInt(req.query.page);
+
+
+            if (isNaN(page)) page = 1;
+
+            const limit = 5;
+            const offset = (page - 1) * limit;
+
+            const courseExist = await findCourseByID(course);
+
+            if (!courseExist) return res.status(404).json({ message: "Grado no encontrado." });
+
+            const students = await findStudentsByCourse(course, limit, offset);
+
+
+            const count = await countStudentsByCourse(course);
+
+            const totalPages = Math.ceil(count / limit);
+
+            return res.status(200).json({ students, totalPages });
+        }
+
+        const courses = await findAllCourses();
         // devolvemos todos los estudiantes con el status 200
-        res.status(200).json(students);
+        res.status(200).json({ courses });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Error al obtener estudiantes." });
@@ -76,7 +100,7 @@ export async function updateStudent(req, res) {
         if (!req.body) return res.status(400).json({ message: "No se recibieron datos." });
 
         // obtenemos el los datos del body
-        const { course, name, lastName, status } = req.body;
+        const { course, name, lastName } = req.body;
         const { document } = req.params;
 
         // si el estudiante no existe
@@ -94,7 +118,6 @@ export async function updateStudent(req, res) {
             grado: course,
             nombre: name,
             apellido: lastName,
-            estado: status
         };
 
         const result = await modifyStudent(updateStudent, document);
@@ -121,7 +144,7 @@ export async function updateStatusStudent(req, res) {
         const { document } = req.params;
 
         // si el estado es incorrecto
-        if (status !== 'Matriculado' && status !== 'Retirado') return res.status(400).json({ message: "El estado es incorrecto." });
+        if (status !== 'Matriculado' && status !== 'Retirado' && status !== 'Cancelado') return res.status(400).json({ message: "El estado es incorrecto." });
 
         // si el estudiante no existe
         const student = await findStudentByDocument(document);

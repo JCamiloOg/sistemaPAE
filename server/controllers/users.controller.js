@@ -1,10 +1,42 @@
-import { findAllUsers, findUserByDocument, insertUser, modifyUser } from "../models/users.model.js";
+import { countUsers, findAllUsers, findUserByDocument, insertUser, modifyUser } from "../models/users.model.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { findRoleById } from "../models/roles.model.js";
 import { SECRET_KEY } from "../config/env.js";
+import conn from "../config/db.js";
 
 
+export async function dashboard(req, res) {
+    try {
+
+        const [[totalStudents], [totalUsers], [totalAssistanceToday], [totalOffensesToday], [studentsWithMoresOffenses], [assistanceForWeek], [upcomingDistribution], [notificationsForWeek], [lastIngresedStudents]] = await Promise.all([
+            await conn.query("SELECT COUNT(*) AS total FROM estudiantes WHERE estado = ? ", ['Matriculado']),
+            await conn.query("SELECT COUNT(*) AS total FROM usuarios WHERE estado = 1"),
+            await conn.query("SELECT COUNT(*) AS total FROM asistencia WHERE DATE(fecha) = CURDATE() AND estado = 'Asistió'"),
+            await conn.query("SELECT COUNT(*) AS total FROM asistencia WHERE DATE(fecha) = CURDATE() AND estado = 'No asistió'"),
+            await conn.query("SELECT E.documento, CONCAT(E.nombre, ' ',E.apellido) AS nombreCompleto , G.grado, COUNT(*) AS total FROM estudiantes E INNER JOIN asistencia A ON E.documento = A.id_estudiante INNER JOIN grados G ON G.id_grado = E.grado WHERE A.estado = 'No asistió' AND MONTH(A.fecha) = MONTH(CURDATE()) AND `E`.estado = 'Matriculado'  GROUP BY E.documento HAVING total >= 3 ORDER BY total DESC LIMIT 5"),
+            await conn.query(`SELECT d.dia, COALESCE(SUM(CASE WHEN YEARWEEK(a.fecha, 1) = YEARWEEK(CURDATE(), 1) THEN 1 ELSE 0 END), 0) AS semana_actual, COALESCE(SUM(CASE WHEN YEARWEEK(a.fecha, 1) = YEARWEEK(CURDATE(), 1) - 1 THEN 1 ELSE 0 END), 0) AS semana_pasada FROM (SELECT 2 AS num, 'Lunes' AS dia UNION SELECT 3, 'Martes' UNION SELECT 4, 'Miércoles' UNION SELECT 5, 'Jueves' UNION SELECT 6, 'Viernes') d LEFT JOIN asistencia a ON DAYOFWEEK(a.fecha) = d.num AND a.estado = 'Asistió' GROUP BY d.num, d.dia ORDER BY FIELD(d.dia,'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes')`),
+            await conn.query("SELECT g.id_grado, g.grado, h.hora_inicio, h.hora_fin, h.turno, CASE WHEN CURTIME() BETWEEN h.hora_inicio AND h.hora_fin THEN 'En curso' WHEN h.hora_inicio > CURTIME() THEN 'Próximo' END AS estado FROM horarios h INNER JOIN grados g ON h.id_grado = g.id_grado WHERE CURTIME() BETWEEN h.hora_inicio AND h.hora_fin OR h.hora_inicio >= CURTIME() ORDER BY CASE WHEN CURTIME() BETWEEN h.hora_inicio AND h.hora_fin THEN 0 ELSE 1 END, h.hora_inicio ASC LIMIT 5"),
+            await conn.query("SELECT n.titulo, n.mensaje, n.fecha, n.tipo, CONCAT(U.nombre, ' ', U.apellido) AS usuario, U.documento FROM usuario_notificacion un INNER JOIN notificaciones n ON un.id_notificacion = n.id_notificacion INNER JOIN usuarios U ON U.documento = un.id_usuario ORDER BY n.fecha DESC LIMIT 5"),
+            await conn.query("SELECT E.documento, CONCAT(E.nombre, ' ', E.apellido) as nombreCompleto, G.grado, E.create_at FROM estudiantes E INNER JOIN grados G ON G.id_grado = E.grado ORDER BY E.create_at DESC LIMIT 5"),
+        ]);
+
+        res.status(200).json({
+            totalStudents: totalStudents[0].total,
+            totalUsers: totalUsers[0].total,
+            totalAssistanceToday: totalAssistanceToday[0].total,
+            totalOffensesToday: totalOffensesToday[0].total,
+            studentsWithMoresOffenses,
+            assistanceForWeek,
+            upcomingDistribution,
+            notificationsForWeek,
+            lastIngresedStudents
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Error al obtener dashboard." });
+    }
+}
 
 export async function getUsers(req, res) {
     try {
@@ -23,11 +55,24 @@ export async function getUsers(req, res) {
             return res.status(200).json(user);
         }
 
+        let page = parseInt(req.query.page);
+
+        if (isNaN(page)) page = 1;
+
+        const limit = 5;
+        const offset = (page - 1) * limit;
+
+        const count = await countUsers();
+
+        const totalPages = Math.ceil(count / limit);
+
+        const [roles] = await conn.query("SELECT * FROM roles");
         // obtenemos todos los estudiantes
-        const users = await findAllUsers();
+        const users = await findAllUsers(offset, limit);
+
 
         // devolvemos todos los estudiantes con el status 200
-        res.status(200).json(users);
+        res.status(200).json({ users, roles, totalPages });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Error al obtener usuarios." });
@@ -45,16 +90,31 @@ export async function login(req, res) {
         // si el estudiante no existe
         const user = await findUserByDocument(document);
 
-        if (!user) return res.status(404).json({ message: "Documento no encontrado." });
+        if (!user) return res.status(404).json({
+            errors: {
+                field: "document",
+                message: "Documento no encontrado."
+            }
+        });
 
         // si la contraseña es incorrecta
         const validPassword = await bcrypt.compare(password, user.password);
 
-        if (!validPassword) return res.status(401).json({ message: "Contraseña incorrecta." });
+        if (!validPassword) return res.status(401).json({
+            errors: {
+                field: "password",
+                message: "Contraseña incorrecta."
+            }
+        });
 
         // si el estudiante esta desactivado
 
-        if (user.estado === 0) return res.status(401).json({ message: "El usuario esta desactivado." });
+        if (user.estado === 0) return res.status(401).json({
+            errors: {
+                field: "document",
+                message: "El usuario esta desactivado."
+            }
+        });
 
         // generamos el token de acceso y lo guardamos en la cookie
         const token = jwt.sign({ id: user.documento, role: user.role_id }, SECRET_KEY, { expiresIn: "1h" });
@@ -62,16 +122,49 @@ export async function login(req, res) {
         res.cookie("token", token, { httpOnly: true });
 
         // devolvemos el estudiante con el status 200
-        res.status(200).json({ message: "Inicio de sesión exitoso." });
+        res.status(200).json({ message: "Inicio de sesión exitoso.", redirect: "/dashboard" });
     } catch (error) {
         console.log(error);
-        return res.status(500).json({ message: "Error al iniciar sesión." });
+        return res.status(500).json({ errors: { message: "Error al iniciar sesión." } });
     }
+}
+
+export async function verifyToken(req, res) {
+    try {
+        // obtenemos el token de la cookie
+        const token = req.cookies.token;
+
+        // si no hay token
+        if (!token) return res.status(401).json({ error: "No se ha verficado el token" });
+
+        // verificamos el token
+        const decoded = jwt.verify(token, SECRET_KEY);
+
+        // si el token es invalido
+        if (!decoded) return res.status(401);
+
+        // buscamos el usuario por el id del token, es decir el documento
+        const user = await findUserByDocument(decoded.id);
+
+        // si el usuario no existe
+        if (!user) return res.status(401);
+
+        // si el usuario esta desactivado
+        if (user.estado === 0) return res.status(401).json({ message: "El usuario actualmente está desactivado, contacte un administrador." });
+
+        return res.status(200).json({ redirect: "/dashboard" });
+    } catch (error) {
+        console.log(error);
+        if (error.name === "TokenExpiredError") return res.status(401).json({ message: "La sesión ha expirado. Inicia sesión de nuevo" });
+        if (error.name === "JsonWebTokenError") return res.status(401).json({ message: "La sesión se ha roto. Inicia sesión de nuevo" });
+        return res.status(500).json({ message: "Error al verificar token." });
+    }
+
 }
 
 export async function createUser(req, res) {
     try {
-        if (!req.body) return res.status(400).json({ message: "No se recibieron datos." });
+        if (!req.body) return res.status(400).json({ errors: { message: "No se recibieron datos." } });
 
         // obtenemos los datos del body
         const { document, password, role, email, name, lastName } = req.body;
@@ -79,7 +172,7 @@ export async function createUser(req, res) {
         // si el estudiante ya existe
         const user = await findUserByDocument(document);
 
-        if (user) return res.status(409).json({ message: "Documento ya registrado." });
+        if (user) return res.status(400).json({ message: "Documento ya registrado." });
 
         // encriptamos la contraseña
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -175,6 +268,7 @@ export async function updateStatusUser(req, res) {
         const { status } = req.body;
         const { document } = req.params;
 
+
         if (status !== 0 && status !== 1) return res.status(400).json({ message: "El estado es incorrecto." });
 
         const user = await findUserByDocument(document);
@@ -188,6 +282,10 @@ export async function updateStatusUser(req, res) {
         const result = await modifyUser(updateUser, document);
 
         if (!result) return res.status(500).json({ message: "Error al actualizar usuario." });
+
+        if (!result.affectedRows) return res.status(500).json({ message: "Error al actualizar usuario." });
+
+        return res.status(200).json({ message: "El estado del usuario ha sido actualizado exitosamente." });
 
     } catch (error) {
         console.log(error);

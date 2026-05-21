@@ -3,9 +3,14 @@ import conn from "../config/db.js";
 // consultas a la base de datos
 
 // obtener todos los usuarios
-export async function findAllUsers() {
-    const [rows] = await conn.query("SELECT U.*, R.rol FROM usuarios U INNER JOIN roles R ON U.role_id = R.id_rol");
+export async function findAllUsers(offset, limit) {
+    const [rows] = await conn.query(`SELECT U.*, R.rol, R.id_rol FROM usuarios U INNER JOIN roles R ON U.role_id = R.id_rol LIMIT ?,?`, [offset, limit]);
     return rows;
+}
+
+export async function countUsers() {
+    const [rows] = await conn.query("SELECT COUNT(*) AS total FROM usuarios");
+    return rows[0].total;
 }
 
 // obtener usuario por documento

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createStudent, getStudents, updateStudent } from "../controllers/students.controller.js";
+import { createStudent, getStudents, updateStatusStudent, updateStudent } from "../controllers/students.controller.js";
 import { insertStudentValidations, updateStudentValidations } from "../middlewares/validations/students.validations.js";
 import { validationErrors } from "../middlewares/validations/validationErrors.js";
 
@@ -14,7 +14,7 @@ router.post("/", insertStudentValidations, validationErrors, createStudent);
 
 // Rutas para actualizar un estudiante
 router.put("/:document", updateStudentValidations, validationErrors, updateStudent);
-router.put("/status/:document", updateStudent);
+router.put("/status/:document", updateStatusStudent);
 
 
 export default router;

@@ -40,7 +40,4 @@ export const updateUserValidations = [
     body("lastName")
         .isLength({ min: 2, max: 50 })
         .withMessage("El apellido debe tener entre 2 y 50 caracteres."),
-    body("status")
-        .isIn([0, 1])
-        .withMessage("El estado es incorrecto."),
 ];

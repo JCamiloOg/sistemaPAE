@@ -37,3 +37,9 @@ export async function removeSchedule(id) {
     const [result] = await conn.query("DELETE FROM horarios WHERE id_horario = ?", [id]);
     return result;
 }
+
+// eliminar horarios por grado
+export async function removeScheduleByCourse(id) {
+    const [result] = await conn.query("DELETE FROM horarios WHERE id_grado = ?", [id]);
+    return result;
+}

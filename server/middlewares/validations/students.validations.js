@@ -20,7 +20,4 @@ export const insertStudentValidations = [
 
 export const updateStudentValidations = [
     ...insertStudentValidations,
-    body("status")
-        .isIn(['Matriculado', 'Retirado'])
-        .withMessage("El estado es incorrecto."),
 ];
