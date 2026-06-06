@@ -1,4 +1,4 @@
-import { findAllAssistanceByDateAndCourse, insertAssistance, modifyAssistance } from "../models/assistance.model.js";
+import { findAllAssistanceByDateAndCourse, findDatesAssistance, insertAssistance, modifyAssistance } from "../models/assistance.model.js";
 import { findCourseByID } from "../models/courses.model.js";
 import { findStudentByCourse, findStudentByDocument } from "../models/students.model.js";
 import { sqlDateFormat, sqlTimeFormat } from "../utils/formatDate.js";
@@ -16,24 +16,27 @@ export async function getAssistance(req, res) {
 
         const assistanceExist = await findAllAssistanceByDateAndCourse(course, date ? date : sqlDateFormat(new Date()));
 
-        if (assistanceExist.length > 0) {
-            if (date == sqlDateFormat(new Date()) || !date) return res.status(200).json({ message: "Ya se ha registrado la asistencia el día de hoy.", students: assistanceExist });
+        const dates = await findDatesAssistance(course);
 
-            return res.status(200).json({ message: "Asistencia obtenida exitosamente.", students: assistanceExist });
+        if (assistanceExist.length > 0) {
+            if (date == sqlDateFormat(new Date()) || !date) return res.status(200).json({ message: "Ya se ha registrado la asistencia el día de hoy.", students: assistanceExist, dates });
+
+            return res.status(200).json({ message: "Asistencia obtenida exitosamente.", students: assistanceExist, dates });
         } else {
-            if (date && date < sqlDateFormat(new Date())) return res.status(404).json({ message: `No se ha registrado la asistencia el día ${Intl.DateTimeFormat('es', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(date))}.` });
+            if (date && date < sqlDateFormat(new Date())) return res.status(404).json({ message: `No se ha registrado la asistencia el día ${Intl.DateTimeFormat('es', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(date))}.`, dates });
 
 
             const students = await findStudentByCourse(course);
 
-            res.status(200).json({ students });
+            return res.status(200).json({ students, dates });
         }
-
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Error al obtener asistencia." });
     }
 }
+
+
 
 
 export async function saveAssistance(req, res) {

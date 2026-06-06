@@ -1,21 +1,32 @@
-import { useCallback, useEffect, useState } from "react";
-import type { Notification, NotificationDB } from "../types/notifications";
-import useAxiosError from "@/shared/hooks/useAxiosError";
-import { createNotification, fetchNotifications, updateNotification, updateTypeNotification } from "../api/notifications";
-import { useNavigate, useSearch } from "@tanstack/react-router";
-import { usePageLoader } from "@/shared/hooks/usePageLoader";
+/* Components */
+import Badge from "@/shared/components/Badge";
+import Button from "@/shared/components/Button";
+import GlassRadioGroup from "@/shared/components/RadioButtons";
+import InputModal from "@/shared/components/modal/InputModal";
+import Modal from "@/shared/components/modal/Modal";
+import Popover from "@/shared/components/Popover";
 import Table from "@/shared/components/table/Table";
 import { faEye, faFloppyDisk, faPenToSquare, faPlus, faXmark } from "@fortawesome/free-solid-svg-icons";
-import Button from "@/shared/components/Button";
-import Popover from "@/shared/components/Popover";
+import { Toast } from "@/shared/ui/alerts";
+
+/* Hooks */
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate, useSearch } from "@tanstack/react-router";
+import { usePageLoader } from "@/shared/hooks/usePageLoader";
 import useModal from "@/shared/hooks/useModal";
 import { useForm } from "@tanstack/react-form";
-import Modal from "@/shared/components/modal/Modal";
-import { Toast } from "@/shared/ui/alerts";
-import InputModal from "@/shared/components/modal/InputModal";
-import GlassRadioGroup from "@/shared/components/RadioButtons";
+import { useUser } from "@/shared/hooks/useUser";
+import useAxiosError from "@/shared/hooks/useAxiosError";
+
+/* Services */
+import { createNotification, fetchNotifications, updateNotification, updateTypeNotification } from "../api/notifications";
+
+
+/* Types*/
+import type { Notification, NotificationDB } from "../types/notifications";
+
+/* Utils */
 import { diffDate } from "@/shared/lib/dateFormat";
-import Badge from "@/shared/components/Badge";
 
 
 export default function NotificationsPage() {
@@ -30,6 +41,7 @@ export default function NotificationsPage() {
         { label: "Urgente", value: "Urgente" },
     ];
 
+    const { user } = useUser();
     const form = useForm({
         defaultValues: notificationSelected || {
             title: "",
@@ -170,7 +182,7 @@ export default function NotificationsPage() {
                             notifications.length > 0 ? (
                                 notifications.map((notification) => (
                                     <Table.Row key={notification.id_notificacion}>
-                                        <Table.Cell>{`${diffDate(new Date(), new Date(notification.fecha), false, true)}`}</Table.Cell>
+                                        <Table.Cell rounded="left">{`${diffDate(new Date(), new Date(notification.fecha), false, true)}`}</Table.Cell>
                                         <Table.Cell>{notification.titulo}</Table.Cell>
                                         <Table.Cell>{notification.usuario}</Table.Cell>
                                         <Table.Cell>
@@ -219,7 +231,11 @@ export default function NotificationsPage() {
                                                         </div>
                                                     </div>
                                                 </Popover>
-                                                <Button color="green" variant="outline" size="sm" icon={faPenToSquare} onClick={() => handleEditNotification(notification.id_notificacion)} title="Editar" type="button" />
+                                                {
+                                                    user?.role === "Administrador" || user?.document === notification.documento && (
+                                                        <Button color="green" variant="outline" size="sm" icon={faPenToSquare} onClick={() => handleEditNotification(notification.id_notificacion)} title="Editar" type="button" />
+                                                    )
+                                                }
                                             </div>
                                         </Table.Cell>
                                     </Table.Row>
@@ -300,7 +316,7 @@ export default function NotificationsPage() {
                             name="type"
                             children={(field) => (
                                 <div className="col-span-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de notificación (No es necesario guardar el formulario)</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de notificación {mode === "update" && "(No es necesario guardar el formulario)"} </label>
                                     <GlassRadioGroup
                                         value={field.state.value || "General"}
                                         onChange={(value) => {

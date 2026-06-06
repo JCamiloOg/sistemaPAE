@@ -90,31 +90,25 @@ export async function login(req, res) {
         // si el estudiante no existe
         const user = await findUserByDocument(document);
 
-        if (!user) return res.status(404).json({
-            errors: {
-                field: "document",
-                message: "Documento no encontrado."
-            }
-        });
+        // si no existe el estudiante
+        if (!user) return res.status(401).json({ message: "Credenciales inválidas." });
+
+        const resUser = {
+            document: user.documento,
+            name: user.nombre,
+            lastName: user.apellido,
+            email: user.correo,
+            role: user.rol
+        };
 
         // si la contraseña es incorrecta
         const validPassword = await bcrypt.compare(password, user.password);
 
-        if (!validPassword) return res.status(401).json({
-            errors: {
-                field: "password",
-                message: "Contraseña incorrecta."
-            }
-        });
+        if (!validPassword) return res.status(401).json({ message: "Credenciales inválidas." });
 
         // si el estudiante esta desactivado
 
-        if (user.estado === 0) return res.status(401).json({
-            errors: {
-                field: "document",
-                message: "El usuario esta desactivado."
-            }
-        });
+        if (user.estado === 0) return res.status(401).json({ message: "El usuario se encuentra inactivo." });
 
         // generamos el token de acceso y lo guardamos en la cookie
         const token = jwt.sign({ id: user.documento, role: user.role_id }, SECRET_KEY, { expiresIn: "1h" });
@@ -122,7 +116,7 @@ export async function login(req, res) {
         res.cookie("token", token, { httpOnly: true });
 
         // devolvemos el estudiante con el status 200
-        res.status(200).json({ message: "Inicio de sesión exitoso.", redirect: "/dashboard" });
+        res.status(200).json({ message: "Inicio de sesión exitoso.", redirect: "/dashboard", user: resUser });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ errors: { message: "Error al iniciar sesión." } });
@@ -135,19 +129,20 @@ export async function verifyToken(req, res) {
         const token = req.cookies.token;
 
         // si no hay token
-        if (!token) return res.status(401).json({ error: "No se ha verficado el token" });
+        if (!token) return res.status(401).json({ message: "No hay token de acceso.", notFound: true });
+
 
         // verificamos el token
         const decoded = jwt.verify(token, SECRET_KEY);
 
         // si el token es invalido
-        if (!decoded) return res.status(401);
+        if (!decoded) return res.status(401).json({ message: "Token de acceso invalido.", notFound: true });
 
         // buscamos el usuario por el id del token, es decir el documento
         const user = await findUserByDocument(decoded.id);
 
         // si el usuario no existe
-        if (!user) return res.status(401);
+        if (!user) return res.status(401).json({ message: "Token de acceso invalido." });
 
         // si el usuario esta desactivado
         if (user.estado === 0) return res.status(401).json({ message: "El usuario actualmente está desactivado, contacte un administrador." });

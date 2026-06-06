@@ -17,5 +17,4 @@ router.post("/", insertNotificationValidations, validationErrors, createNotifica
 router.put("/:id", updateNotificationValidations, validationErrors, updateNotification);
 router.put("/:id/type", updateTypeNotification);
 
-
 export default router;

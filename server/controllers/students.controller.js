@@ -1,5 +1,5 @@
 import { findAllCourses, findCourseByID } from "../models/courses.model.js";
-import { countStudentsByCourse, findStudentByDocument, findStudentsByCourse, insertStudent, modifyStudent } from "../models/students.model.js";
+import { countStudentsByCourse, countStudentsBySearchAndCourse, findStudentByDocument, findStudentsByCourse, findStudentsByCourseAndSearch, insertStudent, modifyStudent } from "../models/students.model.js";
 
 
 export async function getStudents(req, res) {
@@ -24,6 +24,7 @@ export async function getStudents(req, res) {
         if (course != undefined) {
 
             let page = parseInt(req.query.page);
+            const search = req.query.search;
 
 
             if (isNaN(page)) page = 1;
@@ -35,10 +36,17 @@ export async function getStudents(req, res) {
 
             if (!courseExist) return res.status(404).json({ message: "Grado no encontrado." });
 
-            const students = await findStudentsByCourse(course, limit, offset);
+            let students;
+            let count;
 
-
-            const count = await countStudentsByCourse(course);
+            if (search) {
+                students = await findStudentsByCourseAndSearch(course, search, limit, offset);
+                count = await countStudentsBySearchAndCourse(search, course);
+            }
+            else {
+                students = await findStudentsByCourse(course, limit, offset);
+                count = await countStudentsByCourse(course);
+            }
 
             const totalPages = Math.ceil(count / limit);
 

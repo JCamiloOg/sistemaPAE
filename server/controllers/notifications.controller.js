@@ -75,6 +75,8 @@ export async function updateNotification(req, res) {
     try {
         if (!req.body) return res.status(400).json({ message: "No se recibieron datos." });
 
+        const user = req.user;
+
         const { id } = req.params;
         const { title, message } = req.body;
 
@@ -82,6 +84,8 @@ export async function updateNotification(req, res) {
 
 
         if (!notificationExist) return res.status(404).json({ message: "Notificación no encontrada." });
+
+        if (user.documento !== notificationExist.documento) return res.status(403).json({ message: "No tienes permiso para editar esta notificación." });
 
         const updatedData = {
             titulo: title,

@@ -1,18 +1,29 @@
+/* Components */
 import Button from "@/shared/components/Button";
 import Table from "@/shared/components/table/Table";
-import useModal from "@/shared/hooks/useModal";
-import { usePageLoader } from "@/shared/hooks/usePageLoader";
 import { faFloppyDisk, faPenToSquare, faPlus, faTrash, faXmark } from "@fortawesome/free-solid-svg-icons";
-import { useCallback, useEffect, useState } from "react";
-import type { Course, CourseDB } from "../types/course";
 import { MySwal, Toast } from "@/shared/ui/alerts";
-import { deleteCourse, getAllCoursesAndSchedules, insertCourse, updateCourse } from "../api/courses";
-import { useNavigate, useSearch } from "@tanstack/react-router";
 import Modal from "@/shared/components/modal/Modal";
-import { useForm } from "@tanstack/react-form";
 import InputModal from "@/shared/components/modal/InputModal";
 import SelectModal from "@/shared/components/modal/SelectModal";
+
+/* Hooks */
+import useModal from "@/shared/hooks/useModal";
+import { usePageLoader } from "@/shared/hooks/usePageLoader";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useForm } from "@tanstack/react-form";
 import useAxiosError from "@/shared/hooks/useAxiosError";
+
+/* Contexts */
+import { useUser } from "@/shared/hooks/useUser";
+
+/* Services */
+import { deleteCourse, getAllCoursesAndSchedules, insertCourse, updateCourse } from "../api/courses";
+
+/* Types */
+import type { Course, CourseDB } from "../types/course";
+
 
 export default function CoursesPage() {
     const [mode, setMode] = useState<"create" | "update">("create");
@@ -20,6 +31,7 @@ export default function CoursesPage() {
     const [totalPages, setTotalPages] = useState(0);
     const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
 
+    const { user } = useUser();
     const navigate = useNavigate();
     const { handleError } = useAxiosError();
 
@@ -143,10 +155,10 @@ export default function CoursesPage() {
     return (
         <>
             <Table>
-                <Table.Header title="Cursos registrados" description="Estos son los cursos registrados en el sistema" action={<Button type="button" title="Crear curso" icon={faPlus} variant="default" color="green" onClick={() => {
+                <Table.Header title="Cursos registrados" description="Estos son los cursos registrados en el sistema" action={user?.role === "Administrador" ? <Button type="button" title="Crear curso" icon={faPlus} variant="default" color="green" onClick={() => {
                     setMode("create");
                     openModal();
-                }} />} />
+                }} /> : undefined} />
                 <Table.Table>
                     <Table.Thead>
                         <Table.Row head>
@@ -154,7 +166,11 @@ export default function CoursesPage() {
                             <Table.Cell className="font-bold">Turno</Table.Cell>
                             <Table.Cell className="font-bold text-center">Hora inicio de reparto</Table.Cell>
                             <Table.Cell className="font-bold text-center">Hora fin de reparto</Table.Cell>
-                            <Table.Cell className="font-bold">Acciones</Table.Cell>
+                            {
+                                user?.role === "Administrador" && (
+                                    <Table.Cell className="font-bold">Acciones</Table.Cell>
+                                )
+                            }
                         </Table.Row>
                     </Table.Thead>
 
@@ -165,15 +181,19 @@ export default function CoursesPage() {
                                     <Table.Cell rounded="left">{course.grado}</Table.Cell>
                                     <Table.Cell>{course.turno}</Table.Cell>
                                     <Table.Cell className="text-center">{Intl.DateTimeFormat('es-CO', { hour: "numeric", minute: "2-digit", hour12: true, }).format(new Date(`1970-01-01 ${course.hora_inicio}`))}</Table.Cell>
-                                    <Table.Cell className="text-center">{Intl.DateTimeFormat('es-CO', { hour: "numeric", minute: "2-digit", hour12: true, }).format(new Date(`1970-01-01 ${course.hora_fin}`))}</Table.Cell>
-                                    <Table.Cell className="flex justify-center gap-2">
-                                        <Button type="button" title="Editar" icon={faPenToSquare} variant="outline" color="green" onClick={() => {
-                                            handleSelectCourse(course.id_grado);
-                                        }} />
-                                        <Button type="button" title="Eliminar" icon={faTrash} variant="semi" color="rose" onClick={() => {
-                                            handleDeleteCourse(course.id_grado);
-                                        }} />
-                                    </Table.Cell>
+                                    <Table.Cell className="text-center" rounded={user?.role === "Administrador" ? "none" : "right"}>{Intl.DateTimeFormat('es-CO', { hour: "numeric", minute: "2-digit", hour12: true, }).format(new Date(`1970-01-01 ${course.hora_fin}`))}</Table.Cell>
+                                    {
+                                        user?.role === "Administrador" && (
+                                            <Table.Cell className="flex justify-center gap-2">
+                                                <Button type="button" title="Editar" icon={faPenToSquare} variant="outline" color="green" onClick={() => {
+                                                    handleSelectCourse(course.id_grado);
+                                                }} />
+                                                <Button type="button" title="Eliminar" icon={faTrash} variant="semi" color="rose" onClick={() => {
+                                                    handleDeleteCourse(course.id_grado);
+                                                }} />
+                                            </Table.Cell>
+                                        )
+                                    }
                                 </Table.Row>
                             ))
                         ) :

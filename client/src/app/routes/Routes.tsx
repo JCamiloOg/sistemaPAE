@@ -68,6 +68,7 @@ const studentsRoute = createRoute({
     validateSearch: (search) => ({
         course: search.course ? Number(search.course) : undefined,
         page: search.course ? Number(search.page || 1) : undefined,
+        search: search.search ? search.search : undefined,
     }),
     component: () => <StudentsPage />
 });

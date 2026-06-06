@@ -19,11 +19,11 @@ router.post("/", login);
 router.get("/dashboard", authenticate, authenticateRoles("Administrador", "Encargado PAE"), dashboard);
 
 router.use("/users", authenticate, authenticateRoles("Administrador"), usersRoutes);
-router.use("/students", authenticate, authenticateRoles("Administrador"), studentsRoutes);
+router.use("/students", authenticate, studentsRoutes);
 router.use("/courses", authenticate, coursesRoutes);
 router.use("/schedules", authenticate, schedulesRoutes);
 router.use("/assistance", authenticate, authenticateRoles("Administrador", "Encargado PAE"), assistanceRoutes);
-router.use("/notifications", authenticate, authenticateRoles("Administrador"), notificationsRoutes);
+router.use("/notifications", authenticate, authenticateRoles("Administrador", "Encargado PAE"), notificationsRoutes);
 router.post("/logout", authenticate, logout);
 
 export default router;

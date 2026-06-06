@@ -1,41 +1,30 @@
-import {
-    faBell,
-    faBoxOpen,
-    faCalendarXmark,
-    faChartLine,
-    faClipboardCheck,
-    faUserGraduate,
-    faUsers,
-    faCircleInfo,
-    faTriangleExclamation,
-    faBullhorn,
-    faUser,
-    faArrowRight,
-} from "@fortawesome/free-solid-svg-icons";
-
+/* Components */
+import { faBell, faBoxOpen, faCalendarXmark, faChartLine, faClipboardCheck, faUserGraduate, faUsers, faCircleInfo, faTriangleExclamation, faBullhorn, faUser, faArrowRight, } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Button from "@/shared/components/Button";
+import { Bar } from "react-chartjs-2";
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, } from "chart.js";
+
+/* Services */
 import { getDashboard } from "../api/dashboard";
+
+/* Hooks */
 import useAxiosError from "@/shared/hooks/useAxiosError";
 import { usePageLoader } from "@/shared/hooks/usePageLoader";
 import { useCallback, useEffect, useState } from "react";
-
-import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    BarElement,
-    Title,
-    Tooltip,
-    Legend,
-} from "chart.js";
-
-import { Bar } from "react-chartjs-2";
-import type { AssistanceForWeek, LastIngresedStudents, NotificationForWeek, StudentsWithMoresOffenses, UpcomingDistribution } from "../types/dashboard";
 import { useNavigate } from "@tanstack/react-router";
 import Popover from "@/shared/components/Popover";
-import { diffDate } from "@/shared/lib/dateFormat";
-import Button from "@/shared/components/Button";
+import { useIsMobile } from "@/shared/hooks/useMobile";
+import OffCanva from "@/shared/components/OffCanva";
+import { useUser } from "@/shared/hooks/useUser";
 
+/* Utils */
+import { diffDate } from "@/shared/lib/dateFormat";
+
+/* Types */
+import type { AssistanceForWeek, LastIngresedStudents, NotificationForWeek, StudentsWithMoresOffenses, UpcomingDistribution } from "../types/dashboard";
+
+/* Config */
 ChartJS.register(
     CategoryScale,
     LinearScale,
@@ -45,6 +34,7 @@ ChartJS.register(
     Legend
 );
 
+/* Constants */
 const notificationStyles = {
     General: {
         bg: "bg-emerald-50/80 border-emerald-100 hover:border-emerald-200 hover:shadow-emerald-100/20",
@@ -88,10 +78,13 @@ export default function DashboardPage() {
     const [notificationsForWeek, setNotificationsForWeek] = useState<NotificationForWeek[]>([]);
     const [lastIngresedStudents, setLastIngresedStudents] = useState<LastIngresedStudents[]>([]);
 
-
+    const isMobile = useIsMobile();
     const { startLoading, stopLoading } = usePageLoader();
     const { handleError } = useAxiosError();
     const navigate = useNavigate();
+    const { user } = useUser();
+
+    const [isOpen, setIsOpen] = useState(false);
 
     const onLoad = useCallback(async () => {
         startLoading();
@@ -150,7 +143,78 @@ export default function DashboardPage() {
 
     return (
         <>
+            {
+                isMobile && (
+                    <OffCanva title="Notificaciones" isOpen={isOpen} setIsOpen={setIsOpen} >
+                        {
+                            notificationsForWeek.length > 0 ? (
+                                <>
+                                    {
+                                        notificationsForWeek.map((notification, index) => {
+                                            const style = notificationStyles[notification.tipo] || notificationStyles.General;
+                                            return (
+                                                <div
+                                                    key={index}
+                                                    className={`flex gap-4 p-4 mb-3 last:mb-0 rounded-[22px] border ${style.bg} transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md shadow-sm`}
+                                                >
+                                                    {/* Icon Badge */}
+                                                    <div className={`shrink-0 w-11 h-11 rounded-[16px] flex items-center justify-center ${style.iconBg} border border-white/50 shadow-inner`}>
+                                                        <FontAwesomeIcon icon={style.icon} className={`text-base ${style.iconColor}`} />
+                                                    </div>
 
+                                                    {/* Content */}
+                                                    <div className="flex-1 min-w-0 text-left">
+                                                        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 mb-1.5">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider ${style.badgeBg}`}>
+                                                                    {notification.tipo}
+                                                                </span>
+                                                                <h4 className={`font-bold text-sm ${style.titleColor} wrap-break-words w-full sm:max-w-xs`}>
+                                                                    {notification.titulo}
+                                                                </h4>
+                                                            </div>
+                                                            <span className="text-[10px] font-medium text-gray-500 bg-black/5 px-2 py-0.5 rounded-md">
+                                                                {`${diffDate(new Date(), new Date(notification.fecha), false, true)}`}
+                                                            </span>
+                                                        </div>
+
+                                                        <p className={`text-xs leading-relaxed ${style.textColor} mb-2.5 wrap-break-words whitespace-pre-line`}>
+                                                            {notification.mensaje}
+                                                        </p>
+
+                                                        <div className="flex items-center gap-1.5 text-[10px] text-gray-500 border-t border-black/5 pt-2">
+                                                            <FontAwesomeIcon icon={faUser} className="text-gray-400/80" />
+                                                            <span className="font-semibold text-gray-600">Por:</span>
+                                                            <span className="text-gray-700 font-medium">{notification.usuario}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    }
+
+                                    <Button
+                                        title="Ver todas"
+                                        icon={faArrowRight}
+                                        color="green"
+                                        variant="outline"
+                                        size="md"
+                                        type="button"
+                                        onClick={() => navigate({ to: "/dashboard/notifications" })}
+                                    />
+                                </>
+                            ) : (
+                                <div className="bg-white/80 rounded-3xl p-4 border border-white/60 text-center">
+                                    <p className="text-sm text-green-700 font-medium">
+                                        No hay notificaciones generales.
+                                    </p>
+                                </div>
+                            )
+                        }
+                    </OffCanva>
+
+                )
+            }
             {/* Content */}
             <section className="space-y-6">
 
@@ -161,105 +225,116 @@ export default function DashboardPage() {
                 >
                     <div>
                         <h1 className="text-3xl font-bold text-green-900">
-                            Dashboard PAE
+                            Dashboard Nutri Check PAE
                         </h1>
 
                         <p className="text-sm text-green-600 mt-1">
                             Resumen general del sistema de alimentación escolar
                         </p>
+
+                        <p className="text-sm text-green-900 mt-1">
+                            Acceso como: <strong>{user?.name} {user?.lastName}</strong> CC: <strong className="font-semibold">{user?.document}</strong>
+                        </p>
+                        <p className="text-sm text-green-900 mt-1">
+                            Rol: <strong>{user?.role}</strong>
+                        </p>
+
                     </div>
 
                     <div className="flex items-center gap-3">
                         <div className="bg-green-100 text-green-800 px-4 py-2 rounded-2xl text-sm">
                             {Intl.DateTimeFormat("es-CO", { dateStyle: "long" }).format(new Date())}
                         </div>
-
-                        <Popover
-                            customTrigger={
-                                <button className="relative p-3 rounded-2xl bg-white/70 border border-white/60 shadow-soft transition cursor-pointer hover:shadow-soft hover:scale-105">
-                                    <FontAwesomeIcon
-                                        icon={faBell}
-                                        className="text-green-800"
-                                    />
+                        {
+                            !isMobile && (
+                                <Popover
+                                    customTrigger={
+                                        <button className="relative p-3 rounded-2xl bg-white/70 border border-white/60 shadow-soft transition cursor-pointer hover:shadow-soft hover:scale-105">
+                                            <FontAwesomeIcon
+                                                icon={faBell}
+                                                className="text-green-800"
+                                            />
+                                            {
+                                                notificationsForWeek.length > 0 && (
+                                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center">
+                                                        {notificationsForWeek.length}
+                                                    </span>
+                                                )
+                                            }
+                                        </button>
+                                    }
+                                    panelClassName="w-150"
+                                    title="Notificaciones recientes"
+                                    placement="bottom-end"
+                                >
                                     {
-                                        notificationsForWeek.length > 0 && (
-                                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center">
-                                                {notificationsForWeek.length}
-                                            </span>
+                                        notificationsForWeek.length > 0 ? (
+                                            <>
+                                                {
+                                                    notificationsForWeek.map((notification, index) => {
+                                                        const style = notificationStyles[notification.tipo] || notificationStyles.General;
+                                                        return (
+                                                            <div
+                                                                key={index}
+                                                                className={`flex gap-4 p-4 mb-3 last:mb-0 rounded-[22px] border ${style.bg} transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md shadow-sm`}
+                                                            >
+                                                                {/* Icon Badge */}
+                                                                <div className={`shrink-0 w-11 h-11 rounded-[16px] flex items-center justify-center ${style.iconBg} border border-white/50 shadow-inner`}>
+                                                                    <FontAwesomeIcon icon={style.icon} className={`text-base ${style.iconColor}`} />
+                                                                </div>
+
+                                                                {/* Content */}
+                                                                <div className="flex-1 min-w-0 text-left">
+                                                                    <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 mb-1.5">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider ${style.badgeBg}`}>
+                                                                                {notification.tipo}
+                                                                            </span>
+                                                                            <h4 className={`font-bold text-sm ${style.titleColor} truncate max-w-[180px] sm:max-w-xs`}>
+                                                                                {notification.titulo}
+                                                                            </h4>
+                                                                        </div>
+                                                                        <span className="text-[10px] font-medium text-gray-500 bg-black/5 px-2 py-0.5 rounded-md">
+                                                                            {`${diffDate(new Date(), new Date(notification.fecha), false, true)}`}
+                                                                        </span>
+                                                                    </div>
+
+                                                                    <p className={`text-xs leading-relaxed ${style.textColor} mb-2.5 wrap-break-words whitespace-pre-line`}>
+                                                                        {notification.mensaje}
+                                                                    </p>
+
+                                                                    <div className="flex items-center gap-1.5 text-[10px] text-gray-500 border-t border-black/5 pt-2">
+                                                                        <FontAwesomeIcon icon={faUser} className="text-gray-400/80" />
+                                                                        <span className="font-semibold text-gray-600">Por:</span>
+                                                                        <span className="text-gray-700 font-medium">{notification.usuario}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })
+                                                }
+
+                                                <Button
+                                                    title="Ver todas"
+                                                    icon={faArrowRight}
+                                                    color="green"
+                                                    variant="outline"
+                                                    size="md"
+                                                    type="button"
+                                                    onClick={() => navigate({ to: "/dashboard/notifications" })}
+                                                />
+                                            </>
+                                        ) : (
+                                            <div className="bg-white/80 rounded-3xl p-4 border border-white/60 text-center">
+                                                <p className="text-sm text-green-700 font-medium">
+                                                    No hay notificaciones generales.
+                                                </p>
+                                            </div>
                                         )
                                     }
-                                </button>
-                            }
-                            panelClassName="w-150"
-                            title="Notificaciones recientes"
-                            placement="bottom-end"
-                        >
-                            {
-                                notificationsForWeek.length > 0 ? (
-                                    <>
-                                        {
-                                            notificationsForWeek.map((notification, index) => {
-                                                const style = notificationStyles[notification.tipo] || notificationStyles.General;
-                                                return (
-                                                    <div
-                                                        key={index}
-                                                        className={`flex gap-4 p-4 mb-3 last:mb-0 rounded-[22px] border ${style.bg} transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md shadow-sm`}
-                                                    >
-                                                        {/* Icon Badge */}
-                                                        <div className={`shrink-0 w-11 h-11 rounded-[16px] flex items-center justify-center ${style.iconBg} border border-white/50 shadow-inner`}>
-                                                            <FontAwesomeIcon icon={style.icon} className={`text-base ${style.iconColor}`} />
-                                                        </div>
-
-                                                        {/* Content */}
-                                                        <div className="flex-1 min-w-0 text-left">
-                                                            <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 mb-1.5">
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider ${style.badgeBg}`}>
-                                                                        {notification.tipo}
-                                                                    </span>
-                                                                    <h4 className={`font-bold text-sm ${style.titleColor} truncate max-w-[180px] sm:max-w-xs`}>
-                                                                        {notification.titulo}
-                                                                    </h4>
-                                                                </div>
-                                                                <span className="text-[10px] font-medium text-gray-500 bg-black/5 px-2 py-0.5 rounded-md">
-                                                                    {`${diffDate(new Date(), new Date(notification.fecha), false, true)}`}
-                                                                </span>
-                                                            </div>
-
-                                                            <p className={`text-xs leading-relaxed ${style.textColor} mb-2.5 wrap-break-words whitespace-pre-line`}>
-                                                                {notification.mensaje}
-                                                            </p>
-
-                                                            <div className="flex items-center gap-1.5 text-[10px] text-gray-500 border-t border-black/5 pt-2">
-                                                                <FontAwesomeIcon icon={faUser} className="text-gray-400/80" />
-                                                                <span className="font-semibold text-gray-600">Por:</span>
-                                                                <span className="text-gray-700 font-medium">{notification.usuario}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })
-                                        }
-
-                                        <Button
-                                            title="Ver todas"
-                                            icon={faArrowRight}
-                                            color="green"
-                                            variant="outline"
-                                            size="md"
-                                            type="button"
-                                            onClick={() => navigate({ to: "/dashboard/notifications" })}
-                                        />
-                                    </>
-                                ) : (
-                                    <div className="bg-white/80 rounded-3xl p-4 border border-white/60 text-center">
-                                        <p className="text-sm text-green-700 font-medium">
-                                            No hay notificaciones generales.
-                                        </p>
-                                    </div>
-                                )
-                            }
-                        </Popover>
+                                </Popover>
+                            )
+                        }
                     </div>
                 </div>
 

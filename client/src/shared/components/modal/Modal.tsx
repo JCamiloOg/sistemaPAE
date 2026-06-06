@@ -47,7 +47,7 @@ export default function Modal({ title, description, children, isOpen = false, cl
     return (
         <div className={`fixed ${visible ? "flex" : "hidden"} inset-0 z-50 items-center justify-center p-4 `} >
             <div className={`absolute inset-0 bg-white/50 backdrop-blur-sm ${isOpen ? 'animate-backdropIn' : 'animate-backdropOut'}`} ref={refBackdrop}></div>
-            <div className={`relative z-10 w-full max-w-2xl rounded-4xl border border-white/60 bg-green-50 p-6 glass-card shadow-soft sm:p-8 ${isOpen ? "animate-modalIn" : "animate-modalOut"}`} onAnimationEnd={handleAnimationEnd}>
+            <div className={`relative z-10 w-full max-w-2xl rounded-4xl border border-white/60  p-6 glass-card shadow-soft sm:p-8 ${isOpen ? "animate-modalIn" : "animate-modalOut"}`} onAnimationEnd={handleAnimationEnd}>
                 <div className="flex items-start justify-between gap-4">
                     <div>
                         <p className="text-sm font-medium text-green-600">{description}</p>

@@ -10,12 +10,14 @@ interface Props<T> {
     value: T;
     onChange: (value: T) => void;
     options: Option<T>[];
+    disabled?: boolean;
 }
 
 export default function GlassRadioGroup<T extends string>({
     value,
     onChange,
     options,
+    disabled = false,
 }: Props<T>) {
     return (
         <div className="flex gap-2 flex-wrap">
@@ -27,9 +29,10 @@ export default function GlassRadioGroup<T extends string>({
                         type="button"
                         key={opt.value}
                         onClick={() => onChange(opt.value)}
+                        disabled={disabled}
                         className={`
               flex items-center gap-2 px-4 py-2 rounded-2xl text-sm transition
-              border backdrop-blur-md cursor-pointer
+              border backdrop-blur-md cursor-pointer disabled:cursor-not-allowed disabled:opacity-50
               ${active
                                 ? "bg-green-600 text-white border-green-600 shadow-soft"
                                 : "bg-white/60 border-white/60 text-green-800 hover:bg-white/80"}

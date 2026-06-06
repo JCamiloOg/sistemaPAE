@@ -21,8 +21,10 @@ export interface PopoverProps {
 
   // Posicionamiento
   placement?:
+  | "bottom-center"
   | "bottom-start"
   | "bottom-end"
+  | "top-center"
   | "top-start"
   | "top-end"
   | "left-start"
@@ -133,8 +135,10 @@ export default function Popover({
 
   // Clases CSS según la colocación (placement)
   const placementClasses = {
+    "bottom-center": "top-full left-1/2 -translate-x-1/2 mt-2 origin-top",
     "bottom-start": "top-full left-0 mt-2 origin-top-left",
     "bottom-end": "top-full right-0 mt-2 origin-top-right",
+    "top-center": "bottom-full left-1/2 -translate-x-1/2 mb-2 origin-bottom",
     "top-start": "bottom-full left-0 mb-2 origin-bottom-left",
     "top-end": "bottom-full right-0 mb-2 origin-bottom-right",
     "left-start": "right-full top-0 mr-2 origin-top-right",

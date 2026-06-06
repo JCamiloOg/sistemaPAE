@@ -5,5 +5,8 @@ export default function useSidebar() {
 
     const toggleSidebar = useCallback(() => setIsOpen(!isOpen), [isOpen]);
 
-    return { isOpen, toggleSidebar };
+    const openSidebar = useCallback(() => setIsOpen(true), []);
+    const closeSidebar = useCallback(() => setIsOpen(false), []);
+
+    return { isOpen, toggleSidebar, openSidebar, closeSidebar };
 }

@@ -18,7 +18,7 @@ app.use(cors({
 }));
 
 // Middlewares de express para parsear el cuerpo de las peticiones
-app.use(express.json({ type: "application/json" }));
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 

@@ -5,6 +5,9 @@ export async function createAssistance(assistance: { documento: string, estado: 
     return await api.post<{ message: string, notFoundStudents?: { documento: string, nombre: string, apellido: string } }>("/assistance", { assistance });
 }
 
+export async function getDatesAvailable() {
+    return await api.get<{ dates: { fecha: string }[] }>(`/assistance/dates`);
+}
 
 export async function updateAssistance(assistance: { documento: string, estado: boolean }[]) {
     return await api.put<{ message: string }>("/assistance", { assistance });

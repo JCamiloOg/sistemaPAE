@@ -2,12 +2,12 @@ import type { Student, StudentDB, StudentStatus } from "@/features/dashboard/typ
 import type { CourseDB } from "../types/course";
 import api from "@/app/api/axios";
 
-export async function getStudents(page?: number, course?: number) {
-    return await api.get<{ students: StudentDB[], totalPages: number, courses: CourseDB[] }>(`/students?${course ? `course=${course}` : ""}${page ? `&page=${page}` : ""}`);
+export async function getStudents(page?: number, course?: number, search?: string) {
+    return await api.get<{ students: StudentDB[], totalPages: number, courses: CourseDB[] }>(`/students?${course ? `course=${course}` : ""}${page ? `&page=${page}` : ""}${search ? `&search=${search}` : ""}`);
 }
 
 export async function getStudentsByCourse(id: number, date: string) {
-    return await api.get<{ message?: string, students: StudentDB[] }>(`/assistance?course=${id}&date=${date}`);
+    return await api.get<{ message?: string, students: StudentDB[], dates: { fecha: string }[] }>(`/assistance?course=${id}&date=${date}`);
 }
 
 export async function insertStudent(student: Omit<Student, "status">) {

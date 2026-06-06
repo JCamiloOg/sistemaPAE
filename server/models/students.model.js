@@ -13,6 +13,16 @@ export async function findStudentsByCourse(course, limit, offset) {
     return rows;
 }
 
+export async function findStudentsByCourseAndSearch(course, search, limit, offset) {
+    const [rows] = await conn.query("SELECT E.documento, E.nombre, E.apellido, G.grado, G.id_grado, E.create_at, E.estado FROM estudiantes E INNER JOIN grados G ON E.grado = G.id_grado WHERE E.grado = ? AND (E.documento LIKE ? OR E.nombre LIKE ? OR E.apellido LIKE ?) LIMIT ?,?", [course, `%${search}%`, `%${search}%`, `%${search}%`, offset, limit]);
+    return rows;
+}
+
+export async function countStudentsBySearchAndCourse(search, course) {
+    const [rows] = await conn.query("SELECT COUNT(*) AS total FROM estudiantes WHERE grado = ? AND (documento LIKE ? OR nombre LIKE ? OR apellido LIKE ?)", [course, `%${search}%`, `%${search}%`, `%${search}%`]);
+    return rows[0].total;
+}
+
 export async function countStudentsByCourse(course) {
     const [rows] = await conn.query("SELECT COUNT(*) AS total FROM estudiantes WHERE grado = ?", [course]);
     return rows[0].total;

@@ -29,12 +29,20 @@ export async function authenticate(req, res, next) {
         // agregamos el usuario al request
         req.user = user;
 
+        const loggedUser = {
+            document: user.documento,
+            name: user.nombre,
+            lastName: user.apellido,
+            email: user.correo,
+            role: user.rol
+        };
+
         // agregamos el rol al response original
         const originalJson = res.json;
 
         res.json = function (data) {
             const extra = {
-                role: user.rol
+                user: loggedUser
             };
 
             const newData = { ...data, ...extra };

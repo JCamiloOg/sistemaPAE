@@ -19,6 +19,14 @@ export interface User {
     role: string;
 }
 
+export interface LoggedUser {
+    document: string;
+    name: string;
+    lastName: string;
+    email: string;
+    role: "Administrador" | "Encargado PAE";
+}
+
 export interface Roles {
     id_rol: number;
     rol: string;

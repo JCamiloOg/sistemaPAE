@@ -3,6 +3,10 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPenToSquare, faSave, faTrash } from "@fortawesome/free-solid-svg-icons";
 import Button from "@/shared/components/Button";
 import { MySwal, Toast } from "@/shared/ui/alerts";
+import { DatePicker } from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { isAxiosError } from "axios";
+import ToggleButton from "@/shared/components/ToggleButton";
 
 
 /* Hooks */
@@ -10,10 +14,12 @@ import { useCallback, useEffect, useState, type ChangeEvent } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useIsMobile } from "@/shared/hooks/useMobile";
 import { usePageLoader } from "@/shared/hooks/usePageLoader";
+import useAxiosError from "@/shared/hooks/useAxiosError";
 
 /* Services */
 import { getAllCourses } from "../api/courses";
 import { createAssistance, updateAssistance } from "@/features/dashboard/api/assistance";
+import { getStudentsByCourse } from "@/features/dashboard/api/students";
 
 /* Types */
 import type { Assistance, StudentDB } from "@/features/dashboard/types/assistance";
@@ -21,10 +27,6 @@ import type { CourseDB } from "@/features/dashboard/types/course";
 
 /* Utils */
 import { sqlDateFormat } from "@/shared/lib/dateFormat";
-import ToggleButton from "@/shared/components/ToggleButton";
-import { getStudentsByCourse } from "@/features/dashboard/api/students";
-import useAxiosError from "@/shared/hooks/useAxiosError";
-
 
 export default function Assistance() {
     const [students, setStudents] = useState<StudentDB[] | []>([]);
@@ -33,6 +35,7 @@ export default function Assistance() {
     const [registeredAssistance, setRegisteredAssistance] = useState(false);
     const isMobile = useIsMobile();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [datesAvailable, setDatesAvailable] = useState<{ fecha: string }[]>([]);
 
     const navigate = useNavigate();
     const { handleError } = useAxiosError();
@@ -45,6 +48,9 @@ export default function Assistance() {
         const value = parseInt(e.target.value);
         if (isNaN(value)) {
             navigate({ to: "/dashboard/assistance" });
+            setStudents([]);
+            setAssistance([]);
+            setSelectedCourse(null);
         } else {
             navigate({
                 to: "/dashboard/assistance",
@@ -55,6 +61,7 @@ export default function Assistance() {
             });
         }
     };
+
 
     const toggleCourse = useCallback(async (id: number, date?: string) => {
         startLoading();
@@ -82,10 +89,19 @@ export default function Assistance() {
                     setRegisteredAssistance(false);
                 }
 
+                setDatesAvailable(response.data.dates);
                 setSelectedCourse(courses.find((course) => course.id_grado === id) || null);
             }
         } catch (error) {
             handleError(error);
+            if (isAxiosError(error)) {
+                setStudents([]);
+                setAssistance([]);
+                setSelectedCourse(null);
+
+                if (error.response?.status === 404) setDatesAvailable(error.response.data.dates);
+            }
+
         } finally {
             setTimeout(() => stopLoading(), 300);
         }
@@ -205,6 +221,14 @@ export default function Assistance() {
         });
     };
 
+    const handleChangeDate = (e: Date | null) => {
+        if (!e) {
+            navigate({ to: "/dashboard/assistance", search: { ...search, date: undefined } });
+            return;
+        }
+        navigate({ to: "/dashboard/assistance", search: { ...search, date: sqlDateFormat(e) } });
+    };
+
     useEffect(() => {
         if (!search.course) return;
 
@@ -216,6 +240,12 @@ export default function Assistance() {
         toggleCourse(id, search.date);
 
     }, [search.course, search.date, toggleCourse]);
+
+    const parseLocalDate = (dateString: string) => {
+        const [year, month, day] = dateString.split("-");
+
+        return new Date(Number(year), Number(month) - 1, Number(day));
+    };
 
     return (
         <>
@@ -248,7 +278,7 @@ export default function Assistance() {
 
                         <div className="md:w-xl">
                             <select
-                                value={search.course}
+                                value={search.course || ""}
                                 onChange={handleChangeCourse}
                                 className="w-full appearance-none bg-white border border-green-200 text-gray-800 text-sm rounded-lg px-4 py-2.5 pr-10 shadow-sm
                         focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500
@@ -279,11 +309,25 @@ export default function Assistance() {
                     </div>
 
                     <label className="block text-sm font-medium text-green-900 mb-1 mt-5">
-                        Seleccionar una fecha de asistencia <strong>(opcional, si no se selecciona, se toma la fecha actual)</strong>
+                        Seleccionar una fecha de asistencia <strong>(opcional, si no se selecciona, se toma la fecha de hoy)</strong>
                     </label>
                     <div className="flex gap-2">
-                        <input value={search.date || ""} disabled={!search.course} max={sqlDateFormat(new Date())} onChange={(e) => navigate({ to: "/dashboard/assistance", search: { ...search, date: e.target.value } })} type="date" className="w-xl appearance-none bg-white border border-green-200 text-gray-800 text-sm rounded-lg px-4 py-2.5 pr-10 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 hover:border-green-400 transition mt-3 disabled:opacity-50" />
-                        <button title="Eliminar" onClick={() => navigate({ to: "/dashboard/assistance", search: { ...search, date: "" } })} className="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600 transition mt-3 disabled:opacity-50"><FontAwesomeIcon icon={faTrash} /></button>
+                        <DatePicker
+                            selected={search.date ? parseLocalDate(search.date) : null}
+                            onChange={handleChangeDate}
+                            maxDate={new Date()}
+                            disabled={!search.course}
+                            placeholderText="Selecciona una fecha..."
+                            className="w-xl appearance-none bg-white border border-green-200 text-gray-800 text-sm rounded-lg px-4 py-2.5 pr-10 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 hover:border-green-400 transition mt-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                            includeDates={
+                                [
+                                    ...datesAvailable.map(date => new Date(date.fecha)),
+                                    new Date()
+                                ]
+                            }
+                        />
+                        {/* <input value={search.date || ""} disabled={!search.course} max={sqlDateFormat(new Date())} type="date"  /> */}
+                        <button title="Eliminar" disabled={!search.date} onClick={() => navigate({ to: "/dashboard/assistance", search: { ...search, date: undefined } })} className="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600 transition mt-3 disabled:opacity-50 disabled:cursor-not-allowed"><FontAwesomeIcon icon={faTrash} /></button>
                     </div>
 
                     <div className="bg-white rounded-2xl shadow-sm border border-green-100 overflow-hidden mt-10 md:overflow-x-hidden overflow-x-auto">
@@ -459,7 +503,7 @@ export default function Assistance() {
                             ) : (
                                 search.course && search.date ? (
                                     <div className="p-4">
-                                        <p className="text-sm text-gray-600">No hay asistencia en la fecha {Intl.DateTimeFormat('es', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(search.date))}.</p>
+                                        <p className="text-sm text-gray-600">No hay asistencia el {Intl.DateTimeFormat('es', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(search.date))}.</p>
                                     </div>
                                 ) :
                                     (

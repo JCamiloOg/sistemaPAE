@@ -7,12 +7,12 @@ export const LoaderProvider = ({ children }: { children: React.ReactNode }) => {
 
     const startLoading = useCallback(() => {
         setLoading(true);
-        document.body.style.overflow = "hidden";
+        document.body.classList.add("overflow-hidden");
     }, []);
 
     const stopLoading = useCallback(() => {
         setLoading(false);
-        document.body.style.overflow = "unset";
+        document.body.classList.remove("overflow-hidden");
     }, []);
 
     return (

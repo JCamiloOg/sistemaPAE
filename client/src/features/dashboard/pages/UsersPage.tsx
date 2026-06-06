@@ -323,7 +323,7 @@ export default function Users() {
                             children={(field) => (
                                 <InputModal
                                     col="col2"
-                                    label={`Contraseña ${mode === "update" ? "(Opcional)" : ""}`}
+                                    label={`${mode === "update" ? "Actualizar contraseña" : "Contraseña"} ${mode === "update" ? "(Opcional)" : ""}`}
                                     placeholder="Ingrese la contraseña"
                                     type="password"
                                     value={field.state.value}

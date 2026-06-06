@@ -1,4 +1,4 @@
-import { faArrowLeft, faArrowRight } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft, faArrowRight, faSearch, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { ReactNode } from "react";
 
@@ -121,6 +121,44 @@ Table.Pagination = ({
                     <FontAwesomeIcon icon={faArrowRight} />
                 </button>
             </div>
+        </div>
+    );
+};
+
+Table.Search = ({
+    value,
+    onChange,
+    placeholder = "Buscar...",
+    className = "",
+}: {
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+    className?: string;
+}) => {
+    return (
+        <div className={`relative flex items-center ${className}`}>
+            <FontAwesomeIcon
+                icon={faSearch}
+                className="absolute left-4 text-green-600/70 text-sm pointer-events-none"
+            />
+            <input
+                type="text"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder={placeholder}
+                className="w-full pl-10 pr-10 py-2.5 rounded-2xl bg-white/70 border border-white/60 shadow-soft text-sm text-green-900 placeholder-green-600/50 outline-none focus:bg-white focus:border-green-500/50 focus:ring-2 focus:ring-green-100 transition-all duration-300"
+            />
+            {value && (
+                <button
+                    type="button"
+                    onClick={() => onChange("")}
+                    className="absolute right-3.5 p-1 rounded-full text-green-600/50 hover:text-green-800 hover:bg-green-50/50 active:bg-green-100/50 transition cursor-pointer flex items-center justify-center"
+                    title="Limpiar búsqueda"
+                >
+                    <FontAwesomeIcon icon={faXmark} className="text-xs" />
+                </button>
+            )}
         </div>
     );
 };

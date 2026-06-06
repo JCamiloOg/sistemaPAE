@@ -15,6 +15,7 @@ import { useForm } from "@tanstack/react-form";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import useAxiosError from "@/shared/hooks/useAxiosError";
+import { useUser } from "@/shared/hooks/useUser";
 
 /* Services */
 import { getStudents, insertStudent, updateStatusStudent, updateStudent } from "@/features/dashboard/api/students";
@@ -30,9 +31,11 @@ export default function StudentsPage() {
     const [totalPages, setTotalPages] = useState(1);
     const [selectedStudent, setSelectedStudent] = useState<Omit<Student, "status"> | null>(null);
 
+    const { user } = useUser();
     const { startLoading, stopLoading } = usePageLoader();
     const { isOpen, closeModal, openModal } = useModal();
-    const { page, course } = useSearch({ from: "/dashboard/students" });
+    const { page, course, search } = useSearch({ from: "/dashboard/students" });
+    const [searchStudent, setSearchStudent] = useState(search || "");
     const navigate = useNavigate();
     const { handleError } = useAxiosError();
 
@@ -107,7 +110,7 @@ export default function StudentsPage() {
         try {
             setStudents([]);
 
-            const response = await getStudents(page, course);
+            const response = await getStudents(page, course, searchStudent);
 
             if (response.status === 200) {
                 setStudents(response.data.students);
@@ -118,7 +121,15 @@ export default function StudentsPage() {
         } finally {
             setTimeout(() => stopLoading(), 300);
         }
-    }, [course, page, startLoading, stopLoading, handleError]);
+    }, [course, page, searchStudent, startLoading, stopLoading, handleError]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setSearchStudent(search?.toLowerCase() || "");
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [search]);
 
 
     const selectEditStudent = (id: string) => {
@@ -161,8 +172,6 @@ export default function StudentsPage() {
             color: '#3f3125',
             confirmButtonColor: '#016630',
             cancelButtonColor: '#5d625f',
-
-
         }).then(async (result) => {
             if (!result.isConfirmed) return;
 
@@ -190,6 +199,12 @@ export default function StudentsPage() {
     useEffect(() => {
         toggleCourse();
     }, [toggleCourse]);
+
+    useEffect(() => {
+        if (course) toggleCourse();
+    }, [course, toggleCourse]);
+
+
     return (
         <>
             <div className="p-6">
@@ -206,12 +221,9 @@ export default function StudentsPage() {
                         <select
                             value={course ? course : ""}
                             onChange={(e) => handleChangeCourse(parseInt(e.target.value))}
-                            className="w-full appearance-none bg-white border border-green-200 text-gray-800 text-sm rounded-lg px-4 py-2.5 pr-10 shadow-sm
-                        focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500
-                        hover:border-green-400 transition"
-
+                            className="w-full appearance-none bg-white border border-green-200 text-gray-800 text-sm rounded-lg px-4 py-2.5 pr-10 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 hover:border-green-400 transition"
                         >
-                            <option value="">Seleccione un curso</option>
+                            <option value="" disabled>Seleccione un curso</option>
 
                             {courses.map((course) => (
                                 <option key={course.id_grado} value={course.id_grado}>
@@ -222,10 +234,20 @@ export default function StudentsPage() {
                     </div>
                 </div>
                 <Table>
-                    <Table.Header title="Listado de estudiantes" description="Aqui se muestran todos los estudiantes pertenecientes al grado seleccionado" action={<Button type="button" title="Crear estudiante" icon={faPlus} color="green" onClick={() => {
+                    <Table.Header title="Listado de estudiantes" description="Aqui se muestran todos los estudiantes pertenecientes al grado seleccionado" action={user?.role === "Administrador" ? <Button type="button" title="Crear estudiante" icon={faPlus} color="green" onClick={() => {
                         setMode("create");
                         openModal();
-                    }} />} />
+                    }} /> : undefined} />
+
+                    {course && students && students.length > 0 && (
+                        <Table.Search
+                            onChange={(value) => {
+                                navigate({ to: "/dashboard/students", search: { course: course, page: page, search: value.trim() } });
+                            }}
+                            value={search || ""}
+                            placeholder="Buscar estudiante por nombre, apellido o documento..."
+                        />
+                    )}
 
                     <Table.Table>
                         <Table.Thead>
@@ -235,7 +257,11 @@ export default function StudentsPage() {
                                 <Table.Cell className="font-bold">Apellido</Table.Cell>
                                 <Table.Cell className="font-bold">Grado</Table.Cell>
                                 <Table.Cell className="font-bold text-center">Estado</Table.Cell>
-                                <Table.Cell className="text-right font-bold">Acciones</Table.Cell>
+                                {
+                                    user?.role === "Administrador" && (
+                                        <Table.Cell className="text-right font-bold">Acciones</Table.Cell>
+                                    )
+                                }
                             </Table.Row>
                         </Table.Thead>
 
@@ -249,16 +275,20 @@ export default function StudentsPage() {
                                                 <Table.Cell>{student.nombre}</Table.Cell>
                                                 <Table.Cell>{student.apellido}</Table.Cell>
                                                 <Table.Cell>{student.grado}</Table.Cell>
-                                                <Table.Cell>
-                                                    <GlassRadioGroup<StudentStatus> options={statusOptions} value={student.estado} onChange={(value) => handleChangeStatusStudent(student.documento, value)} />
+                                                <Table.Cell rounded={user?.role === "Administrador" ? "none" : "right"}>
+                                                    <GlassRadioGroup<StudentStatus> options={statusOptions} value={student.estado} onChange={(value) => handleChangeStatusStudent(student.documento, value)} disabled={user?.role !== "Administrador"} />
                                                 </Table.Cell>
-                                                <Table.Cell rounded="right">
-                                                    <div className="flex justify-end gap-2">
-                                                        <Button title="Editar" type="button" onClick={() => selectEditStudent(student.documento)} icon={faPenToSquare} color="green" size="sm" variant="outline" />
-                                                        {/* <Button title="Eliminar" type="button" onClick={() => handleChangeStatusUser(user.documento)} icon={faTrashCan} color="rose" size="sm" variant="semi" /> */}
+                                                {
+                                                    user?.role === "Administrador" && (
+                                                        <Table.Cell rounded="right">
+                                                            <div className="flex justify-end gap-2">
+                                                                <Button title="Editar" type="button" onClick={() => selectEditStudent(student.documento)} icon={faPenToSquare} color="green" size="sm" variant="outline" />
+                                                                {/* <Button title="Eliminar" type="button" onClick={() => handleChangeStatusUser(user.documento)} icon={faTrashCan} color="rose" size="sm" variant="semi" /> */}
 
-                                                    </div>
-                                                </Table.Cell>
+                                                            </div>
+                                                        </Table.Cell>
+                                                    )
+                                                }
                                             </Table.Row>
                                         ))
                                         :
@@ -273,7 +303,11 @@ export default function StudentsPage() {
                             }
                         </Table.Tbody>
                     </Table.Table>
-                    <Table.Pagination totalPages={totalPages} currentPage={page} onPageChange={(page) => navigate({ to: `/dashboard/students`, search: { course, page } })} />
+                    <Table.Pagination
+                        totalPages={totalPages}
+                        currentPage={page}
+                        onPageChange={(page) => navigate({ to: `/dashboard/students`, search: { course, page, search } })}
+                    />
                 </Table>
             </div>
 
@@ -312,7 +346,7 @@ export default function StudentsPage() {
                                     if (!value) return "El nombre es obligatorio";
                                     if (value.length < 4) return "El nombre debe tener al menos 3 caracteres";
                                     if (value.length > 40) return "El nombre debe tener máximo 50 caracteres";
-                                    if (!/^[a-zA-Z ]+$/.test(value)) return "El nombre solo debe contener letras";
+                                    if (!/^[a-zA-ZÁÉÍÓÚáéíóúÑñ]+$/.test(value)) return "El nombre solo debe contener letras";
                                 }
                             }}
                             name="name"
@@ -335,7 +369,7 @@ export default function StudentsPage() {
                                     if (!value) return "El apellido es obligatorio";
                                     if (value.length < 4) return "El apellido debe tener al menos 3 caracteres";
                                     if (value.length > 40) return "El apellido debe tener máximo 50 caracteres";
-                                    if (!/^[a-zA-Z ]+$/.test(value)) return "El apellido solo debe contener letras";
+                                    if (!/^[a-zA-ZÁÉÍÓÚáéíóúÑñ]+$/.test(value)) return "El apellido solo debe contener letras";
                                 }
                             }}
                             name="lastName"

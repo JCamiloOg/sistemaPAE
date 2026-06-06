@@ -1,12 +1,13 @@
 import api from "@/app/api/axios";
+import type { LoggedUser } from "@/features/dashboard/types/users";
 
 
 export async function loginUser(user: { document: string, password: string }) {
-    return await api.post<{ errors: { field: string, message: string }, message: string, redirect: string }>("/", user);
+    return await api.post<{ errors: { field: string, message: string }, message: string, redirect: string, user: LoggedUser }>("/", user);
 }
 
 export async function verifyToken() {
-    return await api.get<{ message?: string, redirect?: string }>("/");
+    return await api.get<{ message?: string, redirect?: string, notFound?: boolean }>("/");
 }
 
 export async function logout() {
