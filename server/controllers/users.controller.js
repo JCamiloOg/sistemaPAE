@@ -300,6 +300,7 @@ export async function logout(req, res) {
             sameSite: "None",
             secure: true,
             path: "/",
+            partitioned: true
         });
         res.status(200).json({ message: "Cierre de sesión exitoso." });
     } catch (error) {
