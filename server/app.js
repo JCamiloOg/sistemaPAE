@@ -22,6 +22,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+app.get("/", (req, res) => {
+    res.send("Api Sistema PAE en linea.");
+});
+
 app.use("/api", routes);
 
 export default app;
