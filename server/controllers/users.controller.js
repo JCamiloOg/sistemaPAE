@@ -149,9 +149,14 @@ export async function verifyToken(req, res) {
 
         return res.status(200).json({ redirect: "/dashboard" });
     } catch (error) {
-        console.log(error);
-        if (error.name === "TokenExpiredError") return res.status(401).json({ message: "La sesión ha expirado. Inicia sesión de nuevo" });
-        if (error.name === "JsonWebTokenError") return res.status(401).json({ message: "La sesión se ha roto. Inicia sesión de nuevo" });
+        if (error.name === "TokenExpiredError") {
+            res.clearCookie("token");
+            return res.status(401).json({ message: "La sesión ha expirado. Inicia sesión de nuevo" });
+        }
+        if (error.name === "JsonWebTokenError") {
+            res.clearCookie("token");
+            return res.status(401).json({ message: "La sesión se ha roto. Inicia sesión de nuevo" });
+        }
         return res.status(500).json({ message: "Error al verificar token." });
     }
 
