@@ -1,8 +1,11 @@
 import dotenv from "dotenv";
 
 /* Las variables de entorno son variables que se definen en el archivo .env, estas variables se usan para configurar el servidor en diferentes entornos como por ejemplo el entorno de desarrollo, el entorno de produccion, otras maquinas o etc */
+const env = process.env.NODE_ENV || "development";
 
-dotenv.config();
+dotenv.config({
+    path: `.env.${env}`
+});
 
 /* El || es para que si la variable no esta definida se use el valor por defecto */
 
