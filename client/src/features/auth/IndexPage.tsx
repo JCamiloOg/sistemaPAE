@@ -76,9 +76,7 @@ export default function Index() {
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-700 shadow-md mb-4">
                         {/* Puedes usar un ícono de Nutri Check o un logo */}
-                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                        <img src="/logoNutriCheck.png" alt="logoNutriCheck" />
                     </div>
                     <h1 className="text-3xl font-bold text-green-800 tracking-tight">Nutri Check</h1>
                     <p className="text-green-600/80 text-sm mt-1 font-medium">Área Administrativa</p>
@@ -167,6 +165,9 @@ export default function Index() {
                 {/* Footer */}
                 <p className="text-center text-xs text-green-600/60 mt-8">
                     © {new Date().getFullYear()} Nutri Check – Todos los derechos reservados
+                </p>
+                <p className="text-center text-xs text-green-600/60 mt-8">
+                    Desarrollado por: <a href="https://www.instagram.com/jncamilo.dev" className="font-bold text-green-600 hover:text-green-700 hover:underline transition-all duration-300" target="_blank" >Juan Camilo Osorio</a>
                 </p>
             </div>
         </div>
