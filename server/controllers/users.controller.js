@@ -113,7 +113,7 @@ export async function login(req, res) {
         // generamos el token de acceso y lo guardamos en la cookie
         const token = jwt.sign({ id: user.documento, role: user.role_id }, SECRET_KEY, { expiresIn: "1h" });
 
-        res.cookie("token", token, { httpOnly: false, sameSite: "None", secure: true, path: "/" });
+        res.cookie("token", token, { httpOnly: true, sameSite: "None", secure: true, path: "/", maxAge: 24 * 60 * 60 * 1000 });
 
         // devolvemos el estudiante con el status 200
         res.status(200).json({ message: "Inicio de sesión exitoso.", redirect: "/dashboard", user: resUser });
@@ -296,10 +296,10 @@ export async function updateStatusUser(req, res) {
 export async function logout(req, res) {
     try {
         res.clearCookie("token", {
-            httpOnly: false,
+            httpOnly: true,
             sameSite: "None",
             secure: true,
-            path: "/"
+            path: "/",
         });
         res.status(200).json({ message: "Cierre de sesión exitoso." });
     } catch (error) {
