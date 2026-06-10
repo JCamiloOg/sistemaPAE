@@ -4,6 +4,8 @@ import { createContext, type Dispatch, type SetStateAction } from "react";
 type UserContextType = {
     user: LoggedUser | null;
     setUser: Dispatch<SetStateAction<LoggedUser | null>>;
+    accessToken: string | null;
+    setAccessToken: Dispatch<SetStateAction<string | null>>;
 };
 
 const UserContext = createContext<UserContextType | null>(null);

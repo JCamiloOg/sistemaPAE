@@ -3,7 +3,7 @@ import type { LoggedUser } from "@/features/dashboard/types/users";
 
 
 export async function loginUser(user: { document: string, password: string }) {
-    return await api.post<{ errors: { field: string, message: string }, message: string, redirect: string, user: LoggedUser }>("/", user);
+    return await api.post<{ message: string, redirect: string, user: LoggedUser, accessToken: string }>("/", user);
 }
 
 export async function verifyToken() {

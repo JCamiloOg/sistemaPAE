@@ -1,4 +1,4 @@
-import { dashboard, login, logout, verifyToken } from "../controllers/users.controller.js";
+import { dashboard, login, logout, refreshToken, verifyToken } from "../controllers/users.controller.js";
 import { authenticate, authenticateRoles } from "../middlewares/verifyToken.js";
 import coursesRoutes from "./courses.routes.js";
 import schedulesRoutes from "./schedules.routes.js";
@@ -14,6 +14,7 @@ const router = Router();
 // Ruta para login
 router.get("/", verifyToken);
 router.post("/", login);
+router.post("/refresh", refreshToken);
 
 // Rutas administrativas
 router.get("/dashboard", authenticate, authenticateRoles("Administrador", "Encargado PAE"), dashboard);

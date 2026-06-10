@@ -1,18 +1,21 @@
 import jwt from "jsonwebtoken";
 import { findUserByDocument } from "../models/users.model.js";
+import { ACCESS_SECRET } from "../config/env.js";
 
 
 export async function authenticate(req, res, next) {
 
     try {
         // obtenemos el token de las cookies
-        const { token } = req.cookies;
+        const authHeader = req.headers.authorization;
+
+        const token = authHeader && authHeader.split(" ")[1];
 
         // si no hay token
         if (!token) return res.status(401).json({ message: "Acceso no autorizado." });
 
         // verificamos el token
-        const decoded = jwt.verify(token, process.env.SECRET_KEY);
+        const decoded = jwt.verify(token, ACCESS_SECRET);
 
         // si el token es invalido
         if (!decoded) return res.status(401).json({ message: "Acceso no autorizado." });

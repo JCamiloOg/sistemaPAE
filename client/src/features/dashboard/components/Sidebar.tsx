@@ -11,8 +11,7 @@ export default function SidebarAdmin() {
     const { isOpen, toggleSidebar, closeSidebar } = useSidebar();
     const navigate = useNavigate();
     const location = useLocation();
-    const { user } = useUser();
-
+    const { user, setUser, setAccessToken } = useUser();
 
     const navItems = {
         "Administrador": [
@@ -88,6 +87,8 @@ export default function SidebarAdmin() {
                     icon: "success",
                     title: res.data.message,
                 });
+                setAccessToken(null);
+                setUser(null);
                 navigate({ to: "/" });
             }
         } catch {

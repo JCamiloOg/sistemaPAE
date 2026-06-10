@@ -13,7 +13,7 @@ export default function Index() {
     const navigate = useNavigate();
     const { handleError } = useAxiosError();
     const { startLoading, stopLoading } = usePageLoader();
-    const { setUser } = useUser();
+    const { setUser, setAccessToken } = useUser();
 
     const onLoad = useCallback(async () => {
         startLoading();
@@ -24,6 +24,7 @@ export default function Index() {
                 navigate({ to: response.data.redirect });
             }
         } catch (error) {
+
             if (isAxiosError(error)) {
                 if (error.response?.data.notFound) {
                     return;
@@ -52,6 +53,7 @@ export default function Index() {
                         title: response.data.message,
                     });
                     setUser(response.data.user);
+                    setAccessToken(response.data.accessToken);
                     navigate({ to: response.data.redirect });
                 }
             } catch (error) {
@@ -166,9 +168,9 @@ export default function Index() {
                 <p className="text-center text-xs text-green-600/60 mt-8">
                     © {new Date().getFullYear()} Nutri Check – Todos los derechos reservados
                 </p>
-                <p className="text-center text-xs text-green-600/60 mt-8">
+                {/* <p className="text-center text-xs text-green-600/60 mt-8">
                     Desarrollado por: <a href="https://www.instagram.com/jncamilo.dev" className="font-bold text-green-600 hover:text-green-700 hover:underline transition-all duration-300" target="_blank" >Juan Camilo Osorio</a>
-                </p>
+                </p> */}
             </div>
         </div>
     );

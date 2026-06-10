@@ -2,7 +2,7 @@ import { countUsers, findAllUsers, findUserByDocument, insertUser, modifyUser } 
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { findRoleById } from "../models/roles.model.js";
-import { SECRET_KEY } from "../config/env.js";
+import { ACCESS_SECRET, REFRESH_SECRET } from "../config/env.js";
 import conn from "../config/db.js";
 
 
@@ -111,29 +111,71 @@ export async function login(req, res) {
         if (user.estado === 0) return res.status(401).json({ message: "El usuario se encuentra inactivo." });
 
         // generamos el token de acceso y lo guardamos en la cookie
-        const token = jwt.sign({ id: user.documento, role: user.role_id }, SECRET_KEY, { expiresIn: "1h" });
+        const accessToken = jwt.sign({ id: user.documento, role: user.role_id }, ACCESS_SECRET, { expiresIn: "15m" });
+        const refreshToken = jwt.sign({ id: user.documento, role: user.role_id }, REFRESH_SECRET, { expiresIn: "7d" });
+        // const token = jwt.sign({ id: user.documento, role: user.role_id }, SECRET_KEY, { expiresIn: "1h" });
 
-        res.cookie("token", token, { httpOnly: true, sameSite: "None", secure: true, path: "/", maxAge: 24 * 60 * 60 * 1000, partitioned: true });
+        res.cookie("refreshToken", refreshToken, { httpOnly: true, sameSite: "None", secure: true, path: "/", maxAge: 7 * 24 * 60 * 60 * 1000, partitioned: true });
 
         // devolvemos el estudiante con el status 200
-        res.status(200).json({ message: "Inicio de sesión exitoso.", redirect: "/dashboard", user: resUser });
+        res.status(200).json({ message: "Inicio de sesión exitoso.", redirect: "/dashboard", user: resUser, accessToken });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ errors: { message: "Error al iniciar sesión." } });
     }
 }
 
+export async function refreshToken(req, res) {
+    try {
+        const { refreshToken } = req.cookies;
+
+        if (!refreshToken) return res.status(401).json({ message: "No hay token de acceso.", notFound: true });
+
+        const decoded = jwt.verify(refreshToken, REFRESH_SECRET);
+
+        if (!decoded) return res.status(401).json({ message: "Token de acceso invalido.", notFound: true });
+
+        const user = await findUserByDocument(decoded.id);
+
+        if (!user) return res.status(401).json({ message: "Token de acceso invalido.", notFound: true });
+
+        if (user.estado === 0) return res.status(401).json({ message: "El usuario se encuentra inactivo.", notFound: true });
+
+        const payLoad = {
+            id: user.documento,
+            role: user.role_id
+        };
+
+        const newAccessToken = jwt.sign(payLoad, ACCESS_SECRET, { expiresIn: "15m" });
+
+        return res.status(200).json({ accessToken: newAccessToken });
+
+    } catch (error) {
+        if (error.name === "TokenExpiredError") {
+            res.clearCookie("refreshToken");
+            return res.status(401).json({ message: "La sesión ha expirado. Inicia sesión de nuevo" });
+        }
+        if (error.name === "JsonWebTokenError") {
+            res.clearCookie("refreshToken");
+            return res.status(401).json({ message: "La sesión se ha roto. Inicia sesión de nuevo" });
+        }
+
+        return res.status(500).json({ message: "Error al refrescar el token." });
+    }
+}
+
 export async function verifyToken(req, res) {
     try {
         // obtenemos el token de la cookie
-        const token = req.cookies.token;
+        const authHeader = req.headers.authorization;
+        const token = authHeader && authHeader.split(" ")[1];
 
         // si no hay token
         if (!token) return res.status(401).json({ message: "No hay token de acceso.", notFound: true });
 
 
         // verificamos el token
-        const decoded = jwt.verify(token, SECRET_KEY);
+        const decoded = jwt.verify(token, ACCESS_SECRET);
 
         // si el token es invalido
         if (!decoded) return res.status(401).json({ message: "Token de acceso invalido.", notFound: true });
@@ -295,7 +337,7 @@ export async function updateStatusUser(req, res) {
 
 export async function logout(req, res) {
     try {
-        res.clearCookie("token", {
+        res.clearCookie("refreshToken", {
             httpOnly: true,
             sameSite: "None",
             secure: true,

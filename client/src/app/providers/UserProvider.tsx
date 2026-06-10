@@ -5,10 +5,11 @@ import { useState, type ReactNode } from "react";
 
 export default function UserProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<LoggedUser | null>(null);
+    const [accessToken, setAccessToken] = useState<string | null>(null);
 
 
     return (
-        <UserContext.Provider value={{ user, setUser }}>
+        <UserContext.Provider value={{ user, setUser, accessToken, setAccessToken }}>
             {children}
         </UserContext.Provider>
     );
